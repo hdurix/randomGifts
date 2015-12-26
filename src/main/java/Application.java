@@ -4,182 +4,143 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import java.io.*;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Created by hippo on 29/11/2015.
  */
 public class Application {
 
-    private static final Logger logger = Logger.getLogger(Application.class.getName());
+    private static ConfigurationProperties properties = new ConfigurationProperties();
 
     public static void main(String[] args) {
 
-        boolean sendMail = false;
-
-        ArrayList<String> aRenvoyer = new ArrayList<>();
-
-        if (args.length > 0 && args[0].toUpperCase().contains("RENVOI")) {
-            if (args.length > 1) {
-                for (int i = 1; i < args.length; i++) {
-                    System.out.println("renvoie le mail des cadeaux à " + args[i]);
-                    aRenvoyer.add(args[i].toUpperCase());
-                }
-            } else {
-                System.out.println("renvoie le mail des cadeaux à tout le monde");
-            }
-            renvoiMail(aRenvoyer);
-            return;
+        String propFile;
+        if(args.length == 0) {
+            System.out.println("Attention. Le fichier de propriétés n'est pas renseigné, choix par défaut");
+            propFile = "config.properties";
+        } else {
+            propFile = args[0];
         }
-
-        ArrayList<Personne> personnes = new ArrayList<>();
-
-        ArrayList<String> prenoms = new ArrayList<>();
-
-        Personne pers;
-
-        ArrayList<String> tabLignes = new ArrayList<>();
-        BufferedReader buff;
         try {
-//            buff = new BufferedReader(new FileReader("D:\\Users\\Hippolyte\\Documents\\Java\\CadeauxNoel\\cadeau Durix.txt"));
-            buff = new BufferedReader(new FileReader("cadeau Bad.txt"));
-//            buff = new BufferedReader(new FileReader("cadeau Ripounais.txt"));
-
-            String str;
-            while ((str = buff.readLine()) != null) {
-                tabLignes.add(str);
-            }
-        } catch (FileNotFoundException ex) {
-            logger.log(Level.SEVERE, null, ex);
-            return;
-        } catch (IOException ex) {
-            logger.log(Level.SEVERE, null, ex);
+            properties.init(propFile);
+        } catch (IOException | GiftException e) {
+            System.err.println("Problème à la lecture de " + propFile);
+            e.printStackTrace();
             return;
         }
 
+        if (args.length > 1 && args[1].toUpperCase().contains("RENVOI")) {
+            try {
+                reSendMail(args);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            try {
+                randomGifts();
+            } catch (IOException | GiftException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    public static void randomGifts() throws IOException, GiftException {
+
+        Path path = Paths.get(properties.getInputFile());
+        List<String> tabLignes = Files.lines(path, Charset.forName("windows-1252")).collect(Collectors.toList());
         System.out.println("Il y a " + tabLignes.size() + " personnes.");
 
-        String[] tabPers;
-
-        String[] ex;
-
-        for (String p : tabLignes) {
-
-            System.out.println("ligne = " + p);
-
-            tabPers = p.split(";");
-            pers = new Personne();
-            pers.prenom = tabPers[0];
-            prenoms.add(pers.prenom);
-            pers.mail = tabPers[1];
-            if (tabPers.length > 2) {
-                ex = tabPers[2].split(",");
-                System.out.println(ex.length + " choix possibles");
-                pers.exclus.addAll(Arrays.asList(ex));
-            }
-
-            personnes.add(pers);
-        }
+        List<Personne> personnes = tabLignes.stream().map(Personne::new).collect(Collectors.toList());
 
         HashMap<Personne, String> expDest = null;
 
         int nbEssais = 0;
 
         while (expDest == null) {
-            expDest = selectDest(personnes, prenoms);
+            expDest = selectDest(personnes);
             nbEssais++;
         }
 
         System.out.println(nbEssais + " essais");
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println();
-
-        if (sendMail) {
-            String body;
-            for (Personne p : expDest.keySet()) {
-                System.out.println("mail to " + p.mail + " : Cadeau Noël 2015 pour " + p.prenom);
-
-                body = "Tu dois offir un cadeau à "
-                        + "\n.............................................."
-                        + "\n.............................................."
-                        + "\n.............................................."
-                        + "\n.............................................."
-                        + "\n.............................................."
-                        + "\n.............................................."
-                        + "\n.............................................."
-                        + "\n..............................................\n"
-                        + expDest.get(p);
-
-                //System.out.println(body);
-                if (!envoiMail(p.mail, "Cadeau Noël 2015 pour "
-                        + p.prenom, body)) {
-                    return;
-                }
-
-            }
-        } else {
-
-            for (Personne p : expDest.keySet()) {
-                System.out.println("mail to " + p.mail + " : Cadeau Noël 2015 pour " + p.prenom);
-            }
-            int i = 0;
-            Iterator<Personne> iterator = expDest.keySet().iterator();
-            Personne p = iterator.next();
-            List<Personne> ecrits = new ArrayList<>(expDest.size());
-            System.out.print(p.prenom);
-            for (int j = 0; j < expDest.size(); j++) {
-                while (ecrits.contains(p)) {
-                    p = iterator.next();
-                    if (!ecrits.contains(p)) {
-                        System.out.println();
-                        System.out.print(p.prenom);
-                    }
-                }
-                ecrits.add(p);
-                String dest = expDest.get(p);
-                System.out.print(" ==> " + dest);
-                p = expDest.keySet().stream().filter(personne -> personne.prenom == dest).findFirst().get();
-            }
-
+        for (int i = 0; i < 25; i++) {
             System.out.println();
+        }
 
+        if (properties.getSendMail()) {
+            if (prepareMails(expDest)) return;
+        } else {
+            prepareLoopPrint(expDest);
         }
 
         System.out.println(nbEssais + " essais");
 
-        ecritDansFichier(expDest);
+        writeInOutputFile(expDest);
 
     }
 
-    public static HashMap<Personne, String> selectDest(
-            ArrayList<Personne> personnes, ArrayList<String> prenoms) {
+    private static void prepareLoopPrint(HashMap<Personne, String> expDest) {
+        for (Personne p : expDest.keySet()) {
+            System.out.println("mail to " + p.getMail() + " : Cadeau " + properties.getTitle() + " pour " + p);
+        }
+        Iterator<Personne> iterator = expDest.keySet().iterator();
+        Personne p = iterator.next();
+        List<Personne> ecrits = new ArrayList<>(expDest.size());
+        System.out.print(p);
+        for (int j = 0; j < expDest.size(); j++) {
+            while (ecrits.contains(p)) {
+                p = iterator.next();
+                if (!ecrits.contains(p)) {
+                    System.out.println();
+                    System.out.print(p);
+                }
+            }
+            ecrits.add(p);
+            String dest = expDest.get(p);
+            System.out.print(" ==> " + dest);
+            p = expDest.keySet().stream().filter(personne -> personne.getPrenom().equals(dest)).findFirst().get();
+        }
+
+        System.out.println();
+    }
+
+    private static boolean prepareMails(HashMap<Personne, String> expDest) {
+        String body;
+        for (Personne p : expDest.keySet()) {
+            System.out.println("mail to " + p.getMail() + " : " + properties.getTitle() + " pour " + p);
+
+            body = "Tu dois offir un cadeau à "
+                    + "\n.............................................."
+                    + "\n.............................................."
+                    + "\n.............................................."
+                    + "\n.............................................."
+                    + "\n.............................................."
+                    + "\n.............................................."
+                    + "\n.............................................."
+                    + "\n..............................................\n"
+                    + expDest.get(p);
+
+            //System.out.println(body);
+            if (!envoiMail(p.getMail(), "Cadeau " + properties.getTitle() + " pour " + p, body)) {
+                return true;
+            }
+
+        }
+        return false;
+    }
+
+    public static HashMap<Personne, String> selectDest(List<Personne> personnes) {
 
         HashMap<Personne, String> expDest = new HashMap<>();
 
@@ -187,17 +148,17 @@ public class Application {
 
         ArrayList<String> possibles;
 
-        ArrayList<String> resteAfaire = (ArrayList<String>) prenoms.clone();
+        ArrayList<String> resteAfaire = personnes.stream().map(Personne::getPrenom).collect(Collectors.toCollection(ArrayList::new));
 
         String dest;
 
         for (Personne p : personnes) {
             sExclus = "";
             possibles = (ArrayList<String>) resteAfaire.clone();
-            System.out.println(p.prenom + " : " + possibles.size() + " possibles");
-            possibles.remove(p.prenom);
-            for (String x : p.exclus) {
-                System.out.println(p.prenom + " : remove " + x);
+            System.out.println(p + " : " + possibles.size() + " possibles");
+            possibles.remove(p.getPrenom());
+            for (String x : p.getExclus()) {
+                System.out.println(p + " : remove " + x);
                 possibles.remove(x);
             }
             if (possibles.isEmpty()) {
@@ -207,11 +168,11 @@ public class Application {
                 sExclus += "à " + pos + " ou ";
             }
             sExclus = sExclus.substring(0, sExclus.lastIndexOf(" ou "));
-            System.out.println("Personne " + p.prenom + " peut offrir " + sExclus + " (" + possibles.size() + " possibles)");
+            System.out.println("Personne " + p + " peut offrir " + sExclus + " (" + possibles.size() + " possibles)");
             Random r = new Random();
             dest = possibles.get(r.nextInt(possibles.size()));
             resteAfaire.remove(dest);
-            System.out.println("Personne " + p.prenom + " offre à " + dest);
+            System.out.println("Personne " + p + " offre à " + dest);
 
             expDest.put(p, dest);
         }
@@ -220,22 +181,12 @@ public class Application {
 
     public static boolean envoiMail(String to, String subject, String text) {
 
-        // Sender's email ID needs to be mentioned
-        String from = "hippo_@hotmail.fr";
+        String from = properties.getFrom();
+        String host = properties.getSmtp();
 
-        // Assuming you are sending email from localhost
-//        String host = "smtp.orange.fr";
-//        String host = "smtp.sfr.fr";
-        String host = "smtp.free.fr";
-
-        // Get system properties
-        Properties properties = System.getProperties();
-
-        // Setup mail server
-        properties.setProperty("mail.smtp.host", host);
-
-        // Get the default Session object.
-        Session session = Session.getDefaultInstance(properties);
+        Properties systemProperties = System.getProperties();
+        systemProperties.setProperty("mail.smtp.host", host);
+        Session session = Session.getDefaultInstance(systemProperties);
 
         try {
             // Create a default MimeMessage object.
@@ -246,7 +197,10 @@ public class Application {
 
             // Set To: header field of the header.
             message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
-            message.addRecipient(Message.RecipientType.TO, new InternetAddress("hippo_@hotmail.fr"));
+            String additionnalRecipient = properties.getAdditionnalRecipient();
+            if (additionnalRecipient != null) {
+                message.addRecipient(Message.RecipientType.TO, new InternetAddress(additionnalRecipient));
+            }
 
             // Set Subject: header field
             message.setSubject(subject);
@@ -255,60 +209,58 @@ public class Application {
             message.setText(text);
 
             // Send message
-            Transport.send(message);
+            if (!properties.isDebug()) {
+                Transport.send(message);
+            }
             System.out.println("Sent message successfully....");
         } catch (MessagingException mex) {
-            System.out.println(mex);
+            System.err.println(mex);
             return false;
         }
         return true;
     }
 
-    public static void ecritDansFichier(HashMap<Personne, String> expDest) {
+    public static void writeInOutputFile(HashMap<Personne, String> expDest) throws IOException, GiftException {
 
-        try {
 
-//            File file = new File("D:\\Users\\Hippolyte\\Documents\\Java\\CadeauxNoel\\sauvegarde Durix.txt");
-//            File file = new File("sauvegarde Bad.txt");
-            File file = new File(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) + ".txt");
+        File file = new File(properties.getOutputFile());
 
-            System.out.println("sauvegarde dans " + file.getAbsolutePath());
+        System.out.println("sauvegarde dans " + file.getAbsolutePath());
 
-            // if file doesnt exists, then create it
-            if (!file.exists()) {
-                file.createNewFile();
+        // if file doesnt exists, then create it
+        if (!file.exists()) {
+            boolean created = file.createNewFile();
+            if (!created) {
+                System.err.println("impossible de créer " + file);
+                throw new GiftException();
             }
-
-            FileWriter fw = new FileWriter(file.getAbsoluteFile());
-            try (BufferedWriter bw = new BufferedWriter(fw)) {
-                for (Personne p : expDest.keySet()) {
-                    bw.write(p.mail + ";" + p.prenom + ";" + expDest.get(p) + "\n");
-                }
-            }
-
-            System.out.println("Done");
-
-        } catch (IOException ioe) {
-            System.out.println(ioe);
         }
+
+        FileWriter fw = new FileWriter(file.getAbsoluteFile());
+        try (BufferedWriter bw = new BufferedWriter(fw)) {
+            for (Personne p : expDest.keySet()) {
+                bw.write(p.getMail() + ";" + p.getPrenom() + ";" + expDest.get(p) + "\n");
+            }
+        }
+
+        System.out.println("Done");
+
     }
 
-    public static void renvoiMail(ArrayList<String> personnesSpecifiques) {
-        ArrayList<String> tabLignes = new ArrayList<>();
-        BufferedReader buff;
-        try {
-            buff = new BufferedReader(new FileReader("D:\\Users\\Hippolyte\\Documents\\Java\\CadeauxNoel\\sauvegarde Durix.txt"));
-            String str;
-            while ((str = buff.readLine()) != null) {
-                tabLignes.add(str);
+    public static void reSendMail(String[] args) throws IOException {
+
+        List<String> personnesSpecifiques = new ArrayList<>();
+
+        if (args.length > 1) {
+            for (int i = 1; i < args.length; i++) {
+                System.out.println("renvoie le mail des cadeaux à " + args[i]);
+                personnesSpecifiques.add(args[i].toUpperCase());
             }
-        } catch (FileNotFoundException ex) {
-            logger.log(Level.SEVERE, null, ex);
-            return;
-        } catch (IOException ex) {
-            logger.log(Level.SEVERE, null, ex);
-            return;
+        } else {
+            System.out.println("renvoie le mail des cadeaux à tout le monde");
         }
+
+        List<String> tabLignes = Files.lines(Paths.get("sauvegarde Bad.txt")).collect(Collectors.toList());
 
         String[] split;
         String body;
@@ -317,10 +269,9 @@ public class Application {
 
             split = line.split(";");
 
-            if (personnesSpecifiques.isEmpty()
-                    || personnesSpecifiques.contains(split[1].toUpperCase())) {
+            if (personnesSpecifiques.isEmpty() || personnesSpecifiques.contains(split[1].toUpperCase())) {
 
-                System.out.println("mail to " + split[0] + " : Cadeau Noël 2015 pour " + split[1]);
+                System.out.println("mail to " + split[0] + " : " + properties.getTitle() + " pour " + split[1]);
 
                 body = "Tu dois offir un cadeau à "
                         + "\n.............................................."
@@ -333,7 +284,7 @@ public class Application {
                         + "\n..............................................\n"
                         + split[2];
 
-                envoiMail(split[0], "[RAPPEL] Cadeau Noël 2015 pour " + split[1], body);
+                envoiMail(split[0], "[RAPPEL] " + properties.getTitle() + " pour " + split[1], body);
             }
         }
     }
