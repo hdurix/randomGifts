@@ -1,0 +1,4 @@
+sebastien.girault@dekra.com;Seb;Hippo
+hippo_@hotmail.fr;Hippo;Stéph
+cherdam@hotmail.com;Stéph;Caro
+cbouchacourt@hotmail.com;Caro;Seb

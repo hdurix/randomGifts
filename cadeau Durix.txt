@@ -1,0 +1,16 @@
+Hippo;hippo_@hotmail.fr;Juliette,Agathe,Jean-Claude,Hélène,Tanguy,Fleur,Véro,Anne
+Philo;philo.luccioni@gmail.com;Célest,Anne,Paul,Tanguy,Agathe,Juliette
+Célest;luccioni.celest@gmail.com;Philo,Anne,Paul,Hippo,Christine,Jean-Claude
+Fleur;florianesilventefernandez@gmail.com;Papi,Mamie,Véro,Juliette,Paul
+Agathe;agathe.durix@yahoo.fr;Hippo,Juliette,Jean-Claude,Hélène,Tanguy,Paul,Philo,Régis
+Juliette;juliette.durix@hotmail.fr;Hippo,Agathe,Hélène,Jean-Claude,Tanguy,Véro,Fleur,Papi
+Tanguy;tanguy.balandras@yahoo.fr;Hippo,Agathe,Juliette,Hélène,Jean-Claude,Anne,Papi,Fleur
+Jean-Claude;jcdu@orange.fr;Hélène,Hippo,Juliette,Agathe,Tanguy,Célest,Anne,Véro
+Hélène;helene.durix@barriquand.com;Jean-Claude,Hippo,Juliette,Agathe,Tanguy,Philo,Mamie,Célest,Christine
+Régis;regis.fayard@free.fr;Christine,Hippo,Agathe,Hélène,Célest
+Christine;christine.szingera@yahoo.fr;Régis,Philo,Mamie,Tanguy
+Anne;anne.luccioni@gmail.com;Paul,Philo,Célest,Hippo,Hélène,Jean-Claude,Mamie
+Paul;p.luccioni@laposte.net;Anne,Philo,Célest,Juliette,Hippo,Hélène
+Papi;durix.noel@neuf.fr;Mamie,Fleur,Véro,Christine,Paul,Philo
+Mamie;durix.noel@neuf.fr;Papi,Fleur,Véro,Jean-Claude,Régis,Agathe
+Véro;veronique.durix@orange.fr;Célest,Juliette,Fleur,Papi,Mamie,Régis,Tanguy,Hippo
